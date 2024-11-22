@@ -2,7 +2,7 @@ FROM php:8.1-fpm-alpine3.20
 
 LABEL maintainer="michal@sotolar.com"
 
-ENV ROUNDCUBE_VERSION=1.6.8
+ENV ROUNDCUBE_VERSION=1.6.9
 ARG SHA256=8468be0204a734c574adef4be01578c7dc4fab9c2fe34003bf341a2bd20efd2a
 ADD https://github.com/roundcube/roundcubemail/releases/download/$ROUNDCUBE_VERSION/roundcubemail-$ROUNDCUBE_VERSION-complete.tar.gz /usr/src/roundcubemail.tar.gz
 
