@@ -25,19 +25,20 @@ clone:
 steps:
 
   - name: version
-    image: mwalbeck/determine-docker-tags
+    image: mwalbeck/determine-docker-tags:0.1
     pull: true
     environment:
       APP_NAME: "ROUNDCUBE"
       VERSION_TYPE: "docker_env"
       INCLUDE_SUFFIX: "no"
       INCLUDE_MAJOR: "no"
+      CUSTOM_TAGS: "${CI_COMMIT_SHA:0:8},latest"
 
-  - name: normalize
-    image: bash
+  - name: shellcheck
+    image: kokuwaio/shellcheck
     pull: true
-    commands:
-      - echo ",${CI_COMMIT_SHA:0:8},latest" >> .tags
+    settings:
+      shell: bash
 
   - name: publish
     image: woodpeckerci/plugin-docker-buildx

@@ -1,16 +1,21 @@
-FROM php:8.1-fpm-alpine3.21
+FROM php:8.4-fpm-alpine3.23
 
-LABEL maintainer="michal@sotolar.com"
+LABEL org.opencontainers.image.url="https://github.com/misotolar/docker-roundcube"
+LABEL org.opencontainers.image.description="Roundcube Webmail Alpine Linux FPM image"
+LABEL org.opencontainers.image.authors="Michal Sotolar <michal@sotolar.com>"
 
-ENV ROUNDCUBE_VERSION=1.6.10
-ARG SHA256=03cfac2f494dd99c25c35efb0ad4d333f248e32f25f4204fbc8f2731bfbaf0e4
+ENV ROUNDCUBE_VERSION=1.6.12
+ARG SHA256=180b485dfde1898b2f1ac8046b34063898d263d7605fc64c41e230e3418f2a30
 ADD https://github.com/roundcube/roundcubemail/releases/download/$ROUNDCUBE_VERSION/roundcubemail-$ROUNDCUBE_VERSION-complete.tar.gz /usr/src/roundcubemail.tar.gz
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
-ENV MAX_EXECUTION_TIME 300
-ENV MEMORY_LIMIT 64M
-ENV UPLOAD_LIMIT 2048K
+ENV TZ=UTC
+ENV PHP_FPM_POOL=www
+ENV PHP_FPM_LISTEN=0.0.0.0:9000
+ENV PHP_MAX_EXECUTION_TIME=300
+ENV PHP_MEMORY_LIMIT=64M
+ENV PHP_UPLOAD_LIMIT=2048K
 
 WORKDIR /usr/local/roundcube
 
@@ -19,6 +24,7 @@ RUN set -ex; \
         bash \
         coreutils \
         git \
+        gettext-envsubst \
         icu-data-full \
         rsync \
         tzdata; \
@@ -83,10 +89,13 @@ RUN set -ex; \
     \
     { \
         echo 'expose_php=off'; \
-        echo 'max_execution_time=${MAX_EXECUTION_TIME}'; \
-        echo 'memory_limit=${MEMORY_LIMIT}'; \
-        echo 'post_max_size=${UPLOAD_LIMIT}'; \
-        echo 'upload_max_filesize=${UPLOAD_LIMIT}'; \
+        echo 'allow_url_fopen=off'; \
+        echo 'date.timezone=${TZ}'; \
+        echo 'max_input_vars=10000'; \
+        echo 'memory_limit=${PHP_MEMORY_LIMIT}'; \
+        echo 'post_max_size=${PHP_UPLOAD_LIMIT}'; \
+        echo 'upload_max_filesize=${PHP_UPLOAD_LIMIT}'; \
+        echo 'max_execution_time=${PHP_MAX_EXECUTION_TIME}'; \
     } > $PHP_INI_DIR/conf.d/roundcube-misc.ini; \
     echo "$SHA256 */usr/src/roundcubemail.tar.gz" | sha256sum -c -; \
     rm -rf \
@@ -96,6 +105,7 @@ RUN set -ex; \
         /var/tmp/* \
         /tmp/*;
 
+COPY resources/php-fpm.conf /usr/local/etc/php-fpm.conf.docker
 COPY resources/config.inc.php /usr/src/config.inc.php
 COPY resources/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY resources/exclude.txt /usr/src/roundcubemail.exclude
