@@ -4,15 +4,20 @@ LABEL org.opencontainers.image.url="https://github.com/misotolar/docker-roundcub
 LABEL org.opencontainers.image.description="Roundcube Webmail Alpine Linux FPM image"
 LABEL org.opencontainers.image.authors="Michal Sotolar <michal@sotolar.com>"
 
-ENV ROUNDCUBE_VERSION=1.6.12
-ARG SHA256=180b485dfde1898b2f1ac8046b34063898d263d7605fc64c41e230e3418f2a30
+ENV ROUNDCUBE_VERSION=1.6.15
+ARG SHA256=48c9f212c77460132491f670abaf440b765c8276268349a690913764d26afbef
 ADD https://github.com/roundcube/roundcubemail/releases/download/$ROUNDCUBE_VERSION/roundcubemail-$ROUNDCUBE_VERSION-complete.tar.gz /usr/src/roundcubemail.tar.gz
+
+ENV HEALTHCHECK_VERSION=0.6.0
+ARG HEALTHCHECK_SHA256=53bc616c4a30f029b98bff48fdeb0c4da252cb11e4f86656a8222a67dc4e5009
+ADD https://raw.githubusercontent.com/renatomefi/php-fpm-healthcheck/refs/tags/v$HEALTHCHECK_VERSION/php-fpm-healthcheck /usr/local/bin/healthcheck
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 ENV TZ=UTC
 ENV PHP_FPM_POOL=www
 ENV PHP_FPM_LISTEN=0.0.0.0:9000
+ENV PHP_FPM_STATUS_PATH=/healthcheck
 ENV PHP_MAX_EXECUTION_TIME=300
 ENV PHP_MEMORY_LIMIT=64M
 ENV PHP_UPLOAD_LIMIT=2048K
@@ -23,6 +28,7 @@ RUN set -ex; \
     apk add --no-cache \
         bash \
         coreutils \
+        fcgi \
         git \
         gettext-envsubst \
         icu-data-full \
@@ -79,11 +85,12 @@ RUN set -ex; \
     } > $PHP_INI_DIR/conf.d/session-strict.ini; \
     \
     { \
+        echo 'log_errors=off'; \
+        echo 'display_errors=off'; \
         echo 'session.auto_start=off'; \
         echo 'session.gc_maxlifetime=21600'; \
         echo 'session.gc_divisor=500'; \
         echo 'session.gc_probability=1'; \
-        echo 'output_buffering=on'; \
         echo 'zlib.output_compression=off'; \
     } > $PHP_INI_DIR/conf.d/roundcube-defaults.ini; \
     \
@@ -98,6 +105,8 @@ RUN set -ex; \
         echo 'max_execution_time=${PHP_MAX_EXECUTION_TIME}'; \
     } > $PHP_INI_DIR/conf.d/roundcube-misc.ini; \
     echo "$SHA256 */usr/src/roundcubemail.tar.gz" | sha256sum -c -; \
+    echo "$HEALTHCHECK_SHA256 */usr/local/bin/healthcheck" | sha256sum -c -; \
+    chmod 755 /usr/local/bin/healthcheck; \
     rm -rf \
         /usr/src/php.tar.xz \
         /usr/src/php.tar.xz.asc \
@@ -111,6 +120,9 @@ COPY resources/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY resources/exclude.txt /usr/src/roundcubemail.exclude
 
 VOLUME /usr/local/roundcube
+
+HEALTHCHECK --start-interval=60s --start-period=300s --interval=5s \
+    CMD FCGI_CONNECT=${PHP_FPM_LISTEN} FCGI_STATUS_PATH=${PHP_FPM_STATUS_PATH} /usr/local/bin/healthcheck
 
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["php-fpm"]

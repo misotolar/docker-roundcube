@@ -6,8 +6,7 @@ else
     mkdir -p /usr/src/roundcubemail; tar -xf /usr/src/roundcubemail.tar.gz -C /usr/src/roundcubemail --exclude-from=/usr/src/roundcubemail.exclude --strip-components=1
     (cd /usr/src/roundcubemail && bin/installto.sh -y /usr/local/roundcube)
     rm -rf /usr/src/roundcubemail
-    composer config --no-plugins allow-plugins.roundcube/plugin-installer true
-    composer update --no-dev
+    composer --prefer-dist --no-dev --no-interaction --optimize-autoloader install
 fi
 
 : "${ROUNDCUBEMAIL_DSNW:=sqlite:////usr/local/etc/roundcube/roundcube.db?mode=0646}"
