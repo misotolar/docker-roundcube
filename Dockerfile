@@ -4,8 +4,8 @@ LABEL org.opencontainers.image.url="https://github.com/misotolar/docker-roundcub
 LABEL org.opencontainers.image.description="Roundcube Webmail Alpine Linux FPM image"
 LABEL org.opencontainers.image.authors="Michal Sotolar <michal@sotolar.com>"
 
-ENV ROUNDCUBE_VERSION=1.6.15
-ARG SHA256=48c9f212c77460132491f670abaf440b765c8276268349a690913764d26afbef
+ENV ROUNDCUBE_VERSION=1.7.1
+ARG SHA256=1e0382bcefd627ab0b6285d3181ddfba5b444fdcf6d49f33f5ea15fbf97864ef
 ADD https://github.com/roundcube/roundcubemail/releases/download/$ROUNDCUBE_VERSION/roundcubemail-$ROUNDCUBE_VERSION-complete.tar.gz /usr/src/roundcubemail.tar.gz
 
 ENV HEALTHCHECK_VERSION=0.6.0
